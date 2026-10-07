@@ -1,0 +1,4 @@
+# fichiers de travail, jamais publiés
+*.pdf
+*.log
+.DS_Store
