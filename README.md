@@ -54,7 +54,7 @@ Members of parliament appear here by name, with how they voted. This is public
 information about elected representatives acting in their official capacity,
 published by the assemblies themselves.
 
-## How it is checked
+## Automated checks
 
 Every name list is counted back against the total announced in the transcript.
 No member may carry two different group affiliations across a sitting. Every
@@ -62,6 +62,19 @@ quotation is located verbatim in the source text and attributed to the speaker
 the transcript names. Where the record is silent — a missing first name, a
 minister's party, the reason for an absence — the gap is flagged on the page
 rather than filled by guesswork.
+
+These checks are programmatic. They catch counting discrepancies, not
+misreadings.
+
+## ⚠️ This site may contain errors
+
+Transcripts are parsed and data extracted **by an AI**, with no systematic human
+review. Errors of reading, attribution or interpretation remain possible, and
+the author cannot be held liable for them.
+
+This is experimental work: doubt is permitted, and even welcome. **Only the
+official transcript is authoritative.** To settle a question, follow the source
+links above, find the sitting by its date, and read the passage yourself.
 
 ## Technical
 

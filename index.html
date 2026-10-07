@@ -544,6 +544,19 @@ body.avec-avis header{padding-top:0}
 .mcard{padding:18px 20px;background:var(--panel);border:1px solid var(--line);border-radius:3px}
 .mcard h3{font-size:16px;margin-bottom:8px}
 .mcard p{color:var(--ink-dim);font-size:15.5px;line-height:1.6}
+.mcard p + p{margin-top:9px}
+/* la mise en garde ne se lit pas comme une information neutre : elle est signalée,
+   et occupe toute la dernière ligne pour ne pas se confondre avec les quatre autres */
+.mcard.alerte{border-left:3px solid var(--accent);background:var(--accent-soft);
+  grid-column:1/-1}
+@media (min-width:861px){
+  /* sur toute la largeur, deux colonnes valent mieux qu'une ligne de 110 signes */
+  .mcard.alerte{display:grid;grid-template-columns:repeat(2,1fr);gap:4px 28px;align-items:start}
+  .mcard.alerte h3{grid-column:1/-1}
+  .mcard.alerte p + p{margin-top:0}
+}
+.mcard.alerte h3{color:var(--accent)}
+.mcard.alerte b{color:var(--ink);font-weight:700}
 @media (max-width:860px){
   .hlabel .plogo{--lh:20px;--lw:42px;padding:2px 3px}
   /* groupe à deux emblèmes : empilés, ils ne tiennent plus — on garde le premier */
@@ -635,16 +648,27 @@ body.avec-avis header{padding-top:0}
       Ils sont toujours présentés à part des chiffres.</p>
     </div>
     <div class="mcard">
-      <h3>Comment c’est vérifié</h3>
+      <h3>Les contrôles automatiques</h3>
       <p>Chaque liste de noms est recomptée contre le total annoncé par le document. Aucun
       élu ne peut porter deux groupes différents. Chaque citation est retrouvée dans le texte
-      source, et attribuée à la personne que le compte rendu désigne.</p>
+      source, et attribuée à la personne que le compte rendu désigne. Ces contrôles sont
+      programmés : ils détectent les écarts de comptage, pas les contresens.</p>
     </div>
     <div class="mcard">
       <h3>Ce qui reste incertain</h3>
       <p>Les comptes rendus ne disent pas tout : ils taisent parfois un prénom, le parti d’un
       ministre, ou le motif d’une absence. Ces zones d’ombre sont signalées sur la page du
       scrutin concerné plutôt que comblées au jugé.</p>
+    </div>
+    <div class="mcard alerte">
+      <h3>Ce site peut contenir des erreurs</h3>
+      <p>Les comptes rendus sont dépouillés et les données extraites <b>par une intelligence
+      artificielle</b>, sans relecture humaine systématique. Des erreurs de lecture,
+      d’attribution ou d’interprétation restent donc possibles, et l’auteur ne saurait en être
+      tenu responsable.</p>
+      <p>C’est un travail expérimental : le doute est permis, et même souhaitable. <b>Seul le
+      compte rendu officiel fait foi.</b> Pour lever un doute, remontez à la source par les
+      liens ci-dessus, retrouvez la séance à sa date et lisez le passage vous-même.</p>
     </div>
   </div>
 </section>
