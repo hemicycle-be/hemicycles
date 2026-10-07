@@ -35,7 +35,7 @@ yet.
 | Assembly | Seats | Sittings | Roll-call votes |
 |---|---:|---:|---:|
 | Chamber of Representatives | 150 | 2 | 8 |
-| Fédération Wallonie-Bruxelles | 94 | 2 | 10 |
+| Fédération Wallonie-Bruxelles | 94 | 3 | 13 |
 | Parliament of Wallonia | 75 | 1 | 20 |
 
 ## Sources
