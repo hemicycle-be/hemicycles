@@ -415,6 +415,14 @@ body[data-theme="dark"] .hlabel .plogo{box-shadow:0 1px 5px rgba(0,0,0,.45)}
   transition:opacity .13s,transform .13s;background:var(--tipbg);border:1px solid var(--line2);
   border-radius:3px;padding:10px 13px;max-width:290px;box-shadow:var(--shadow)}
 #tip.on{opacity:1;transform:none}
+#tip .lexdef b{font-family:var(--serif);font-size:15px;color:var(--accent)}
+#tip .lexdef p{font-family:var(--sans);font-size:12.5px;line-height:1.5;color:var(--ink-dim);
+  margin-top:5px}
+
+/* terme du lexique : souligné en pointillé, sans rompre la lecture */
+.lex{font-style:inherit;border-bottom:1px dotted var(--accent-line);cursor:help}
+.lex:hover,.lex:focus-visible{border-bottom-color:var(--accent);color:var(--accent)}
+.lex:focus-visible{outline:2px solid var(--accent);outline-offset:2px;border-radius:2px}
 #tip .tiphead{display:flex;align-items:flex-start;gap:12px}
 #tip .tipid{min-width:0;flex:1}
 #tip .plogo{--lh:30px;--lw:76px}
@@ -512,7 +520,14 @@ body.avec-avis header{padding-top:0}
 .mode svg{display:block}
 .avis a:focus-visible{outline:2px solid var(--accent);outline-offset:3px}
 
-#view-home,#view-methode{display:flex;flex-direction:column;gap:38px}
+#view-home,#view-methode,#view-lexique{display:flex;flex-direction:column;gap:38px}
+.lexlist{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:14px;margin:0}
+.lexlist .e{padding:18px 20px;background:var(--panel);border:1px solid var(--line);
+  border-radius:3px}
+.lexlist dt{font-family:var(--serif);font-size:19px;font-weight:700;color:var(--accent)}
+.lexlist .rappel{display:block;font-family:var(--sans);font-size:12.5px;font-weight:400;
+  color:var(--muted);margin-top:4px}
+.lexlist dd{margin:10px 0 0;color:var(--ink-dim);font-size:15.5px;line-height:1.6}
 
 /* seconde mise au point : ce qu'est ce site, et ce qu'il n'est pas encore */
 .projet{padding:20px 22px;background:var(--panel);border:1px solid var(--line);border-radius:3px;
@@ -526,6 +541,13 @@ body.avec-avis header{padding-top:0}
   color:var(--accent)}
 .projet .chantier::before{content:"";width:6px;height:6px;border-radius:50%;
   background:var(--accent);flex:none}
+.projet .renvois{display:flex;flex-wrap:wrap;gap:8px 22px;margin-top:14px;padding-top:13px;
+  border-top:1px solid var(--line)}
+.projet .renvois a{color:var(--accent);font-weight:600;text-decoration:underline;
+  text-decoration-color:var(--accent-line);text-decoration-thickness:1px;text-underline-offset:3px}
+.projet .renvois a:hover{text-decoration-color:var(--accent)}
+.projet .renvois a::after{content:" →"}
+.projet .renvois a:focus-visible{outline:2px solid var(--accent);outline-offset:3px}
 .msrc{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:14px}
 .msrc .s{display:flex;flex-direction:column;gap:9px;padding:18px 20px;background:var(--panel);
   border:1px solid var(--line);border-radius:3px}
@@ -609,6 +631,24 @@ body.avec-avis header{padding-top:0}
 <section id="view-home" hidden>
   <div class="home" id="home"></div>
   <aside class="projet" id="projet-home"></aside>
+</section>
+
+<header id="h-lexique" hidden>
+  <nav class="navbar" aria-label="Fil d'Ariane">
+    <div class="crumbs" id="crumbs-lexique"></div>
+  </nav>
+  <div class="rule-top">
+    <span class="flag" id="f-lexique"></span>
+    <span class="eyebrow">Vocabulaire des assemblées</span>
+  </div>
+  <h1>Les mots du <em>travail parlementaire</em></h1>
+  <p class="lede">Décret, motion, résolution : ces mots désignent des objets précis, qui
+  n’ont ni la même portée ni les mêmes effets. Voici de quoi lire un scrutin sans
+  dictionnaire.</p>
+</header>
+
+<section id="view-lexique" hidden>
+  <dl class="lexlist" id="lexlist"></dl>
 </section>
 
 <header id="h-methode" hidden>
@@ -826,6 +866,143 @@ const el = id => document.getElementById(id);
 const mk = (n, a) => { const e = document.createElementNS(SVGNS, n);
   for (const k in a) e.setAttribute(k, a[k]); return e; };
 const esc = s => String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+
+/* ── lexique parlementaire ───────────────────────────
+   Le vocabulaire des assemblées est opaque pour qui ne le pratique pas : « motion
+   pure et simple », « sanction », « projet » contre « proposition »… Les termes sont
+   soulignés dans les textes suivis — jamais dans les titres, les cartes ni les
+   citations, dont on ne touche pas au rendu — et expliqués au survol.
+   `court` sert l'infobulle, `long` la page dédiée. */
+const LEXIQUE = {
+  'décret': {
+    mot: 'décret',
+    court: "Norme législative d'un parlement de communauté ou de région. Dans ses matières, "
+         + "elle a la même force qu'une loi fédérale.",
+    long: "En Belgique, le pouvoir législatif est partagé. Ce que le Parlement fédéral appelle "
+        + "une loi, les parlements de communauté et de région l'appellent un décret. Il n'y a "
+        + "pas de hiérarchie entre les deux : chacun est souverain dans ses compétences. "
+        + "Un décret adopté est transmis au gouvernement pour sanction et promulgation."
+  },
+  'projet': {
+    mot: 'projet',
+    court: "Texte déposé par le gouvernement. Son pendant parlementaire s'appelle une proposition.",
+    long: "L'initiative d'un texte peut venir de l'exécutif ou du législatif, et le vocabulaire "
+        + "les distingue : le gouvernement dépose un projet de décret ou de loi, les "
+        + "parlementaires déposent une proposition. La distinction n'est pas que formelle — un "
+        + "projet a généralement été soumis au Conseil d'État et aux concertations d'usage avant "
+        + "son dépôt."
+  },
+  'proposition': {
+    mot: 'proposition',
+    court: "Texte déposé par un ou plusieurs parlementaires, par opposition au projet, qui émane "
+         + "du gouvernement.",
+    long: "Déposer une proposition est le moyen par lequel un parlementaire exerce son droit "
+        + "d'initiative. Elle suit le même parcours qu'un projet : examen en commission, "
+        + "amendements éventuels, vote en séance plénière. Une proposition émanant de "
+        + "l'opposition est rarement adoptée, sauf accord transpartisan."
+  },
+  'résolution': {
+    mot: 'résolution',
+    court: "Texte par lequel l'assemblée demande quelque chose au gouvernement. Elle n'a aucune "
+         + "force contraignante.",
+    long: "Une résolution n'est pas une norme : elle n'oblige personne. C'est une prise de "
+        + "position formelle, qui demande au gouvernement d'agir dans un sens donné. Sa portée "
+        + "est politique — elle engage la majorité qui la vote devant son propre exécutif — et "
+        + "elle sert souvent à peser sur un autre niveau de pouvoir, fédéral ou européen."
+  },
+  'motion': {
+    mot: 'motion',
+    court: "Texte concluant un débat ou une interpellation. La « motion pure et simple » ne "
+         + "demande rien : elle sert à écarter les motions motivées.",
+    long: "Après une interpellation, un parlementaire peut déposer une motion pour faire trancher "
+        + "l'assemblée. La majorité répond souvent par une motion dite « pure et simple », qui ne "
+        + "formule aucune demande et dont l'adoption fait tomber les motions motivées de "
+        + "l'opposition. C'est un outil de procédure : son adoption clôt le débat sans engager "
+        + "le gouvernement à quoi que ce soit."
+  },
+  'amendement': {
+    mot: 'amendement',
+    court: "Modification proposée à un texte en discussion. Il est mis aux voix avant le texte "
+         + "lui-même.",
+    long: "Un amendement vise un article précis pour le réécrire, le compléter ou le supprimer. "
+        + "Il se vote avant l'article qu'il modifie, et l'article amendé se vote avant l'ensemble "
+        + "du texte. Un amendement rejeté ne laisse pas de trace dans le texte final, mais le "
+        + "vote qu'il a provoqué reste au compte rendu."
+  },
+  'article': {
+    mot: 'article',
+    court: "Disposition numérotée d'un texte. Chaque article peut être mis aux voix séparément.",
+    long: "Un texte législatif se découpe en articles numérotés, qui sont l'unité de base du "
+        + "travail parlementaire : on amende un article, on vote un article. Lorsqu'un article "
+        + "fait l'objet d'un désaccord, l'assemblée peut le « réserver » et y revenir après avoir "
+        + "adopté le reste du texte."
+  },
+  'interpellation': {
+    mot: 'interpellation',
+    court: "Question développée d'un parlementaire à un ministre, qui peut se conclure par le "
+         + "dépôt de motions.",
+    long: "Plus lourde qu'une simple question, l'interpellation ouvre un débat : l'auteur expose "
+        + "son grief, le ministre répond, d'autres groupes interviennent. Elle peut déboucher sur "
+        + "des motions, et c'est là qu'elle se distingue vraiment — elle permet de contraindre "
+        + "l'assemblée à se prononcer par un vote sur la politique menée."
+  },
+  'nomination': {
+    mot: 'nomination',
+    court: "Désignation à une fonction, soumise au vote de l'assemblée.",
+    long: "Certaines fonctions — présidences d'organismes publics, régulateurs, mandats au sein "
+        + "d'institutions — sont pourvues par un vote du parlement, ou sur proposition qu'il doit "
+        + "approuver. Le vote porte alors sur une personne ou sur un appel à candidatures, non "
+        + "sur une norme."
+  },
+  'sanction': {
+    mot: 'sanction',
+    court: "Approbation finale d'un texte voté par l'exécutif, qui lui donne force obligatoire.",
+    long: "Un texte adopté par le parlement n'est pas encore en vigueur. Il est transmis à "
+        + "l'exécutif — le Roi pour une loi fédérale, le gouvernement de communauté ou de région "
+        + "pour un décret — qui le sanctionne et le promulgue. La sanction est l'acte par lequel "
+        + "l'exécutif marque son accord ; la publication au Moniteur belge le rend opposable."
+  },
+};
+
+/* un terme n'est souligné qu'à sa première occurrence dans un bloc : au-delà, le
+   soulignement deviendrait du bruit */
+const LEX_RE = new RegExp(
+  '\\b(' + Object.keys(LEXIQUE).map(k => k + 's?').join('|') + ')\\b', 'gi');
+
+function lexiquer(texte) {
+  if (!texte) return '';
+  const vus = new Set();
+  return esc(texte).replace(LEX_RE, (m) => {
+    const cle = m.toLowerCase().replace(/s$/, '');
+    if (!LEXIQUE[cle] || vus.has(cle)) return m;
+    vus.add(cle);
+    return `<i class="lex" data-lex="${cle}" tabindex="0" role="button"`
+         + ` aria-label="${esc(LEXIQUE[cle].mot)} : ${esc(LEXIQUE[cle].court)}">${m}</i>`;
+  });
+}
+
+function lexTip(node) {
+  const d = LEXIQUE[node.dataset.lex];
+  if (!d) return;
+  const t = el('tip');
+  t.innerHTML = `<div class="lexdef"><b>${esc(d.mot)}</b><p>${esc(d.court)}</p></div>`;
+  t.classList.add('on');
+  const r = node.getBoundingClientRect();
+  const w = t.offsetWidth, h = t.offsetHeight;
+  t.style.left = Math.max(8, Math.min(innerWidth - w - 8, r.left + r.width / 2 - w / 2)) + 'px';
+  t.style.top = (r.top - h - 10 < 8 ? r.bottom + 10 : r.top - h - 10) + 'px';
+}
+
+/* un seul jeu d'écouteurs sur le document : les textes sont réécrits à chaque
+   scrutin, et rattacher les écouteurs à chaque rendu les multiplierait */
+function bindLexique() {
+  const dans = e => e.target.closest && e.target.closest('.lex');
+  document.addEventListener('pointerover', e => { const n = dans(e); if (n) lexTip(n); });
+  document.addEventListener('pointerout', e => { if (dans(e)) hideTip(); });
+  document.addEventListener('focusin', e => { const n = dans(e); if (n) lexTip(n); });
+  document.addEventListener('focusout', e => { if (dans(e)) hideTip(); });
+}
+
 const COL = g => inst.couleurs[g], LONG = g => inst.noms_longs[g];
 /* le compte rendu nomme les groupes autrement que la liste officielle */
 const GMAP = {'Indépendante':'INDEP','Indépendant':'INDEP','Lib.res':'lib.res','DéFI':'DéFI'};
@@ -1043,7 +1220,7 @@ function renderHeader() {
   el('f-detail').innerHTML = flagHTML(inst);
   el('d-criv').textContent = `${inst.nomLong} · ${sc.criv} · ${sc.moment}`;
   el('d-title').innerHTML = `${sc.date} : <em>${esc(sc.titre.toLowerCase())}</em>`;
-  el('d-lede').textContent = sc.resume;
+  el('d-lede').innerHTML = lexiquer(sc.resume);
   el('d-facts').innerHTML = `<span><b>${inst.sieges}</b> sièges</span>` +
     sc.chiffres.map(c => `<span><b>${c[0]}</b> ${c[1]}</span>`).join('');
   el('roll-sub').textContent = `Les ${inst.sieges} élus pour le scrutin affiché.`;
@@ -1334,7 +1511,7 @@ function table() {
   el('tfoot').innerHTML = `<tr><td>Total</td>${K.map(k => `<td class="n">${tot[k]}</td>`).join('')}
     <td style="font-family:var(--sans);font-size:12px;color:var(--muted);font-weight:400">
       ${N - tot.absent} votants sur ${N}</td></tr>`;
-  el('t-sub').textContent = sc.scrutins[cur].note;
+  el('t-sub').innerHTML = lexiquer(sc.scrutins[cur].note);
 }
 
 function roll() {
@@ -1419,7 +1596,7 @@ function positions() {
       <div class="pos-head">${partyLogo(q.groupe)}${
         q.qui ? `<span class="qui">${esc(q.qui)}</span>` : ''}
         <span class="verdict ${q.sens}">${SENSLBL[q.sens] || q.sens}</span></div>
-      <p>${esc(q.argument)}</p>
+      <p>${lexiquer(q.argument)}</p>
     </div>`).join('');
 }
 
@@ -1434,9 +1611,9 @@ function renderScrutin() {
   const more = el('s-more');
   more.hidden = !s.detail;
   more.open = false;                       // replié à chaque changement de scrutin
-  if (s.detail) el('s-detail').textContent = s.detail;
+  if (s.detail) el('s-detail').innerHTML = lexiquer(s.detail);
   el('s-impactwrap').hidden = !s.impact;
-  if (s.impact) el('s-impact').textContent = s.impact;
+  if (s.impact) el('s-impact').innerHTML = lexiquer(s.impact);
   el('c-big').textContent = s.pour;
   el('c-cap').textContent = 'pour';
   el('c-sub').textContent = `sur ${votants} votants`;
@@ -1497,7 +1674,12 @@ const CARDINAL = ['aucune', 'une', 'deux', 'trois', 'quatre', 'cinq', 'six', 'se
 
 /* Écrit à un seul endroit, affiché sur l'accueil et sur la page « méthode » :
    deux copies divergeraient tôt ou tard. */
-function avisProjet() {
+function avisProjet(vue) {
+  // on ne renvoie pas vers la page que le lecteur consulte déjà
+  const renvois = [['#/methode', 'Sources et méthode', 'methode'],
+                   ['#/lexique', 'Lexique parlementaire', 'lexique']]
+    .filter(([, , v]) => v !== vue)
+    .map(([h, t]) => `<a href="${h}">${t}</a>`).join('');
   // énumération sans articles : elle suit un deux-points, et resterait juste si une
   // quatrième assemblée venait s'ajouter
   const liste = INSTS.map(i => i.nom).join(', ');
@@ -1510,7 +1692,8 @@ function avisProjet() {
     <p class="chantier">En construction</p>
     <p>Seules quelques séances sont dépouillées à ce jour. Ni les séances anciennes ni les
     plus récentes n’y figurent toutes : l’absence d’une séance ne veut donc rien dire
-    d’autre que le travail n’a pas encore été fait.</p>`;
+    d’autre que le travail n’a pas encore été fait.</p>
+    <p class="renvois">${renvois}</p>`;
 }
 
 function renderHome() {
@@ -1539,7 +1722,7 @@ function renderHome() {
   }).join('');
   el('home').querySelectorAll('.home-card').forEach(b =>
     b.addEventListener('click', () => nav(path(b.dataset.id), true)));
-  el('projet-home').innerHTML = avisProjet();
+  el('projet-home').innerHTML = avisProjet('home');
 }
 
 /* ── application d'un état ───────────────────────────── */
@@ -1554,7 +1737,7 @@ function applyInst(i) {
 }
 
 // une seule liste à tenir à jour quand on ajoute une vue
-const VUES = ['home', 'methode', 'pick', 'detail'];
+const VUES = ['home', 'methode', 'lexique', 'pick', 'detail'];
 function montrer(vue) {
   VUES.forEach(v => {
     const s = el('view-' + v), h = el('h-' + v);
@@ -1577,6 +1760,20 @@ function showHome() {
   scrollTo({top: 0, behavior: 'instant'});
 }
 
+/* ── vue « lexique » ─────────────────────────────────── */
+function showLexique() {
+  sc = null; hideTip();
+  poserAccent(null);
+  montrer('lexique');
+  crumbs(el('crumbs-lexique'), [{label: 'Accueil', href: path()}, {label: 'Lexique'}]);
+  el('f-lexique').innerHTML = INSTS.map(flagHTML).join('');
+  el('lexlist').innerHTML = Object.values(LEXIQUE).map(d => `<div class="e">
+    <dt>${esc(d.mot)}<span class="rappel">${esc(d.court)}</span></dt>
+    <dd>${esc(d.long)}</dd></div>`).join('');
+  setTitle(['Lexique parlementaire']);
+  scrollTo({top: 0, behavior: 'instant'});
+}
+
 /* ── vue « sources et méthode » ──────────────────────── */
 function showMethode() {
   sc = null; hideTip();
@@ -1584,7 +1781,7 @@ function showMethode() {
   montrer('methode');
   crumbs(el('crumbs-methode'), [{label: 'Accueil', href: path()}, {label: 'Sources et méthode'}]);
   el('f-methode').innerHTML = INSTS.map(flagHTML).join('');
-  el('projet-methode').innerHTML = avisProjet();
+  el('projet-methode').innerHTML = avisProjet('methode');
   el('msrc').innerHTML = INSTS.map(i => `<div class="s">
     <span class="crest">${crest(i)}</span>
     <h3>${esc(i.nom)}</h3>
@@ -1650,6 +1847,7 @@ function showDetail(i, s, scrutinId) {
 function route(push) {
   const seg = parseHash();
   if (seg[0] === 'methode') return showMethode();
+  if (seg[0] === 'lexique') return showLexique();
   const i = seg[0] ? findInst(seg[0]) : null;
   if (!i) return showHome();
   const s = seg[1] ? findSeance(i.id, seg[1]) : null;
@@ -1708,6 +1906,7 @@ function bindShare() {
 }
 
 bindMode();
+bindLexique();
 poserAccent(inst);
 renderInsts();
 bindShare();
