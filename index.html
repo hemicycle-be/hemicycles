@@ -1874,7 +1874,7 @@ function renderOnglets() {
   el('onglets').innerHTML = ongl.map(([h, t, k]) =>
     `<a href="${h}" data-k="${k}">${esc(t)}</a>`).join('');
   el('marque-sceau').innerHTML =
-    '<svg viewBox="0 0 32 22" width="49" height="34" aria-hidden="true">'
+    '<svg viewBox="3 7 26 17" width="52" height="34" aria-hidden="true">'
     + [[6,17],[11,12],[16,10],[21,12],[26,17],[9,21],[16,19],[23,21]]
         .map(([cx, cy], k) => `<circle cx="${cx}" cy="${cy}" r="2.3" fill="${
           ['#C8102E','#C8102E','#EFB008','#306701','#306701','#C8102E','#EFB008','#306701'][k]}"/>`)
