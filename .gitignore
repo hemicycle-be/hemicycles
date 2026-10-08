@@ -2,3 +2,6 @@
 *.pdf
 *.log
 .DS_Store
+
+# outils de dépouillement, gardés en local
+outils/
