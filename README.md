@@ -82,7 +82,9 @@ A single self-contained HTML file. Fonts, party emblems and all data are
 inlined: no CDN, no build step, no runtime dependency, no tracking, no cookies.
 
 Routing is fragment-based (`#/wallonie/pw003/7`), so deep links work on any
-static host without server rewrites. Display mode (light/dark) is remembered in
+static host without server rewrites. A persistent tab bar, a per-page table of
+contents and anchored sections (`#sec-hemicycle`, `#sec-groupes`…) make long
+pages navigable without scrolling blindly. Display mode (light/dark) is remembered in
 `localStorage`; everything else is stateless.
 
 To run it locally, serve the directory with any static server:
