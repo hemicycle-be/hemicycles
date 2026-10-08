@@ -36,7 +36,7 @@ yet.
 |---|---:|---:|---:|
 | Chamber of Representatives | 150 | 2 | 8 |
 | Fédération Wallonie-Bruxelles | 94 | 3 | 13 |
-| Parliament of Wallonia | 75 | 1 | 20 |
+| Parliament of Wallonia | 75 | 2 | 56 |
 
 ## Sources
 
