@@ -497,7 +497,7 @@ footer b{color:var(--ink-dim);font-weight:400}
 
 /* ── avertissement d'accueil et page « sources et méthode » ───────── */
 .avis{display:flex;flex-wrap:wrap;align-items:baseline;gap:6px 18px;
-  margin-top:clamp(20px,3vw,32px);padding:14px 18px;background:var(--panel);
+  padding:14px 18px;background:var(--panel);
   border:1px solid var(--line);border-left:3px solid var(--accent);border-radius:2px;
   font-family:var(--sans);font-size:13.5px;line-height:1.55}
 /* l'avertissement occupe le haut de page : l'en-tête n'a plus à le réserver */
@@ -584,12 +584,15 @@ body.avec-avis header{padding-top:0}
 .topnav{display:flex;flex-direction:row;align-items:center;justify-content:space-between;
   gap:10px 26px;flex-wrap:wrap;border-bottom:1px solid var(--line)}
 .topnav,body.avec-avis .topnav{padding:14px 0 13px}
+/* .wrap espace ses enfants de 52 px : on en reprend une partie pour rapprocher
+   l'avertissement de la barre de navigation */
+.topnav + .avis{margin-top:-34px}
 .marque{display:inline-flex;align-items:center;gap:10px;text-decoration:none;
   color:var(--ink);flex:none}
 .marque .sceau{display:flex;align-items:flex-end;flex:none}
 .marque .sceau svg{display:block}
-.marque .nom{font-family:var(--serif);font-size:17px;font-weight:700;letter-spacing:-.01em}
-.marque:hover .nom{color:var(--accent)}
+.marque{padding:3px;border-radius:4px}
+.marque:hover{background:var(--panel2)}
 .marque:focus-visible{outline:2px solid var(--accent);outline-offset:4px;border-radius:3px}
 #onglets{display:flex;gap:2px;flex-wrap:wrap;justify-content:flex-end}
 #onglets a{font-family:var(--sans);font-size:13.5px;font-weight:600;color:var(--ink-dim);
@@ -676,7 +679,13 @@ body.avec-avis header{padding-top:0}
   .crumbs .lg{display:none}
   .crumbs .sm{display:inline}
   /* répété sur chaque page, l'avertissement doit rester léger sur un petit écran */
-  .avis{padding:11px 14px;gap:4px 14px;font-size:12.5px;margin-top:18px}
+  .avis{padding:11px 14px;gap:4px 14px;font-size:12.5px}
+  /* empilés, les six onglets mangeaient un quart de l'écran : ils défilent plutôt */
+  .topnav{flex-wrap:nowrap;gap:8px}
+  #onglets{flex-wrap:nowrap;overflow-x:auto;min-width:0;justify-content:flex-start;
+    scrollbar-width:none}
+  #onglets::-webkit-scrollbar{display:none}
+  #onglets a{flex:none}
 }
 @media (prefers-reduced-motion:reduce){ *{transition-duration:.01ms !important} }
 </style>
@@ -684,19 +693,18 @@ body.avec-avis header{padding-top:0}
 <div class="wrap">
 
 <header class="topnav" id="topnav">
-  <a class="marque" href="#/" id="marque" aria-label="Hémicycles belges — retour à l’accueil">
+  <a class="marque" href="#/" id="marque" aria-label="Retour à l’accueil">
     <span class="sceau" id="marque-sceau" aria-hidden="true"></span>
-    <span class="nom">Hémicycles<span class="be"> belges</span></span>
   </a>
   <nav id="onglets" aria-label="Navigation principale"></nav>
+  <button class="mode" id="mode" type="button" aria-pressed="false"
+          title="Basculer en mode sombre"><span id="mode-icone"></span></button>
 </header>
 
 <aside class="avis" id="avis" hidden>
   <p>Les chiffres et les noms publiés ici sont établis à partir des <b>comptes rendus que
   chaque assemblée publie elle-même</b>.</p>
   <a href="#/methode" id="avis-lien">Sources et méthode<span aria-hidden="true"> →</span></a>
-  <button class="mode" id="mode" type="button" aria-pressed="false"
-          title="Basculer en mode sombre"><span id="mode-icone"></span></button>
 </aside>
 
 <header id="h-home" hidden>
@@ -1866,7 +1874,7 @@ function renderOnglets() {
   el('onglets').innerHTML = ongl.map(([h, t, k]) =>
     `<a href="${h}" data-k="${k}">${esc(t)}</a>`).join('');
   el('marque-sceau').innerHTML =
-    '<svg viewBox="0 0 32 22" width="30" height="21" aria-hidden="true">'
+    '<svg viewBox="0 0 32 22" width="36" height="25" aria-hidden="true">'
     + [[6,17],[11,12],[16,10],[21,12],[26,17],[9,21],[16,19],[23,21]]
         .map(([cx, cy], k) => `<circle cx="${cx}" cy="${cy}" r="2.3" fill="${
           ['#C8102E','#C8102E','#EFB008','#306701','#306701','#C8102E','#EFB008','#306701'][k]}"/>`)
