@@ -330,7 +330,8 @@ body[data-theme="dark"] .plogo.sigle{background:#1d2a23;border-color:var(--line2
      fait défiler sur place, pour que la page reste parcourable */
   max-height:min(58vh,560px);overflow-y:auto;padding-right:6px;
   scrollbar-width:thin;overscroll-behavior:contain}
-.row{position:relative;display:grid;grid-template-columns:auto minmax(0,1fr) auto auto;
+.row{position:relative;display:grid;
+  grid-template-columns:auto minmax(0,1fr) auto auto auto;
   gap:13px;align-items:center;text-align:left;cursor:pointer;width:100%;line-height:1.25;
   background:var(--panel);border:1px solid var(--line);border-radius:3px;
   padding:6px 13px;transition:border-color .16s,background .16s}
@@ -346,6 +347,9 @@ body[data-theme="dark"] .plogo.sigle{background:#1d2a23;border-color:var(--line2
   overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .row .lbl i{font-family:var(--sans);font-style:normal;font-size:10px;flex:none;
   letter-spacing:.09em;text-transform:uppercase;color:var(--muted)}
+.row .orig{font-family:var(--sans);font-size:10.5px;color:var(--muted);white-space:nowrap;
+  max-width:15em;overflow:hidden;text-overflow:ellipsis;text-align:right}
+.row .orig b{font-weight:600;color:var(--ink);opacity:.72}
 .row .chiffres{font-family:var(--sans);font-size:12.5px;color:var(--muted);
   font-variant-numeric:tabular-nums;white-space:nowrap;
   /* en colonne, les chiffres ne se comparent que s'ils s'alignent */
@@ -358,9 +362,13 @@ body[data-theme="dark"] .plogo.sigle{background:#1d2a23;border-color:var(--line2
 .row .jauge .p{background:var(--accent)}
 .row .jauge .c{background:var(--ink);opacity:.55}
 .row .jauge .a{background:var(--muted);opacity:.4}
+@media(max-width:900px){
+  .row{grid-template-columns:auto minmax(0,1fr) auto auto}
+  .row .orig{display:none}
+}
 @media(max-width:620px){
   .row{grid-template-columns:auto minmax(0,1fr) auto;gap:10px;padding:8px 11px}
-  .row .jauge{display:none}
+  .row .jauge,.row .orig{display:none}
   .row .chiffres{min-width:0}
   .fcount{margin-left:0}
   /* les décomptes par filtre doublent la hauteur de la barre sur un écran
@@ -1482,9 +1490,14 @@ function filtrer() {
 function ligneHTML(s, i) {
   const v = Math.max(1, s.pour + s.contre + s.abst);
   const pc = n => (n / v * 100).toFixed(1);
+  const o = s.origine
+    ? `<span class="orig" title="${esc(s.origine.detail || s.origine.label)}">`
+      + `${esc(s.origine.label)}</span>`
+    : '<span class="orig"></span>';
   return `<button class="row" aria-pressed="${i === cur}" data-i="${i}" type="button">
       <span class="num">${s.id}</span>
       <span class="lbl"><i>${esc(KL[s.kind] || s.kind)}</i><b>${esc(s.court)}</b></span>
+      ${o}
       <span class="chiffres"><b>${s.pour}</b> · <b class="${s.contre ? '' : 'z'}">${s.contre}</b>`
     + ` · <b class="${s.abst ? '' : 'z'}">${s.abst}</b></span>
       <span class="jauge" aria-hidden="true"><span class="p" style="width:${pc(s.pour)}%"></span>`
