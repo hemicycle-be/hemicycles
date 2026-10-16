@@ -311,6 +311,65 @@ body[data-theme="dark"] .plogo.sigle{background:#1d2a23;border-color:var(--line2
   font-variant-numeric:tabular-nums}
 .card .score .z{color:var(--zero)}
 
+/* ── séances chargées : filtres + liste condensée ─────
+   Au-delà d'une quinzaine de scrutins, la grille de cartes devient un mur :
+   on bascule sur une ligne par scrutin, précédée d'une barre de filtres. */
+.filtres{display:flex;flex-wrap:wrap;gap:9px;align-items:center;margin-bottom:14px}
+.filtres .sep{width:1px;height:20px;background:var(--line);flex:none}
+.filtres .search{flex:1 1 190px;max-width:260px}
+.filtres .search input{padding:8px 12px 8px 34px;font-size:13.5px}
+.fcount{font-family:var(--sans);font-size:12px;color:var(--muted);
+  font-variant-numeric:tabular-nums;margin-left:auto}
+.fclear{font-family:var(--sans);font-size:12px;color:var(--muted);background:none;
+  border:0;cursor:pointer;text-decoration:underline;text-underline-offset:3px;padding:4px}
+.fclear:hover{color:var(--ink)}
+.fvide{font-family:var(--sans);font-size:13.5px;color:var(--muted);padding:18px 2px}
+
+.rows{position:relative;display:flex;flex-direction:column;gap:2px;
+  /* une liste d'une colonne est plus haute qu'une grille : on la borne et on la
+     fait défiler sur place, pour que la page reste parcourable */
+  max-height:min(58vh,560px);overflow-y:auto;padding-right:6px;
+  scrollbar-width:thin;overscroll-behavior:contain}
+.row{position:relative;display:grid;grid-template-columns:auto minmax(0,1fr) auto auto;
+  gap:13px;align-items:center;text-align:left;cursor:pointer;width:100%;line-height:1.25;
+  background:var(--panel);border:1px solid var(--line);border-radius:3px;
+  padding:6px 13px;transition:border-color .16s,background .16s}
+.row:hover{border-color:var(--line2);background:var(--panel2)}
+.row:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.row[aria-pressed="true"]{border-color:var(--accent);background:var(--panel2)}
+.row[aria-pressed="true"]::before{content:"";position:absolute;inset:-1px auto -1px -1px;
+  width:3px;background:var(--accent);border-radius:3px 0 0 3px}
+.row .num{font-family:var(--sans);font-size:11px;font-weight:700;color:var(--muted);
+  font-variant-numeric:tabular-nums;min-width:2.4em}
+.row .lbl{min-width:0;display:flex;align-items:baseline;gap:9px}
+.row .lbl b{font-size:14.5px;font-weight:600;letter-spacing:-.006em;line-height:1.25;
+  overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.row .lbl i{font-family:var(--sans);font-style:normal;font-size:10px;flex:none;
+  letter-spacing:.09em;text-transform:uppercase;color:var(--muted)}
+.row .chiffres{font-family:var(--sans);font-size:12.5px;color:var(--muted);
+  font-variant-numeric:tabular-nums;white-space:nowrap;
+  /* en colonne, les chiffres ne se comparent que s'ils s'alignent */
+  min-width:6.1em;text-align:right}
+.row .chiffres b{color:var(--ink);font-weight:600}
+.row .chiffres .z{color:var(--zero)}
+.row .jauge{display:flex;width:68px;height:7px;border-radius:2px;overflow:hidden;
+  background:var(--line);flex:none}
+.row .jauge span{display:block;height:100%}
+.row .jauge .p{background:var(--accent)}
+.row .jauge .c{background:var(--ink);opacity:.55}
+.row .jauge .a{background:var(--muted);opacity:.4}
+@media(max-width:620px){
+  .row{grid-template-columns:auto minmax(0,1fr) auto;gap:10px;padding:8px 11px}
+  .row .jauge{display:none}
+  .row .chiffres{min-width:0}
+  .fcount{margin-left:0}
+  /* les décomptes par filtre doublent la hauteur de la barre sur un écran
+     étroit sans rien apprendre d'essentiel : la liste les redit */
+  .filtres{gap:7px}
+  .filtres .chip .c{display:none}
+  .filtres .search{flex:1 1 100%;max-width:none}
+}
+
 /* ── hémicycle ───────────────────────────────────────── */
 .stage{background:var(--panel);border:1px solid var(--line);border-radius:3px;
   padding:clamp(18px,3vw,34px);display:flex;flex-direction:column;gap:24px}
@@ -864,6 +923,7 @@ body.avec-avis header{padding-top:0}
 
   <section id="sec-choix">
     <div class="section-head"><h2>Choisir un scrutin</h2><p id="d-intro"></p></div>
+    <div class="filtres" id="filtres" hidden></div>
     <div class="cards" id="cards"></div>
   </section>
 
@@ -1389,12 +1449,53 @@ function origineHTML(s) {
     corps ? ' · ' + corps : ''}</span>`;
 }
 
-function cards() {
-  const KL = {Loi:'Projet de loi', Rejet:'Proposition de rejet', Motion:'Motion',
-    Amendement:'Amendement', 'Décret':'Projet de décret', 'Procédure':'Procédure'};
-  const big = s => s.kind === 'Loi' || s.kind === 'Décret';
-  el('cards').innerHTML = sc.scrutins.map((s, i) => `
-    <button class="card ${big(s) ? 'is-law' : ''}" aria-pressed="${i === cur}" data-i="${i}" type="button">
+/* ── choix du scrutin ────────────────────────────────
+   Jusqu'à une quinzaine de scrutins, la grille de cartes se parcourt d'un coup
+   d'œil. Au-delà — une séance de la Chambre en compte parfois cent soixante —
+   elle devient un mur : on passe alors à une ligne par scrutin, avec de quoi
+   filtrer. Les filtres survivent à la navigation entre scrutins d'une même
+   séance, et se remettent à zéro quand on change de séance. */
+const SEUIL_LISTE = 15;
+const KL = {Loi: 'Projet de loi', Rejet: 'Proposition de rejet', Motion: 'Motion',
+  Amendement: 'Amendement', 'Décret': 'Projet de décret', 'Procédure': 'Procédure',
+  Article: 'Article', 'Résolution': 'Résolution', Budget: 'Budget',
+  Nomination: 'Nomination', 'Règlement': 'Règlement'};
+let filtres = {kind: null, issue: null, serre: false, q: ''};
+
+const estAdopte = s => s.pour > s.contre;
+// un vote est dit serré quand l'écart tient dans moins d'un dixième des votants
+const estSerre = s => {
+  const v = s.pour + s.contre + s.abst;
+  return v > 0 && Math.abs(s.pour - s.contre) <= Math.max(5, v / 10);
+};
+
+function filtrer() {
+  const q = filtres.q.trim().toLowerCase();
+  return sc.scrutins.filter(s =>
+    (!filtres.kind || s.kind === filtres.kind)
+    && (!filtres.issue || (filtres.issue === 'adopte') === estAdopte(s))
+    && (!filtres.serre || estSerre(s))
+    && (!q || (s.court + ' ' + s.titre + ' ' + s.objet + ' ' + (s.doc || ''))
+        .toLowerCase().includes(q)));
+}
+
+function ligneHTML(s, i) {
+  const v = Math.max(1, s.pour + s.contre + s.abst);
+  const pc = n => (n / v * 100).toFixed(1);
+  return `<button class="row" aria-pressed="${i === cur}" data-i="${i}" type="button">
+      <span class="num">${s.id}</span>
+      <span class="lbl"><i>${esc(KL[s.kind] || s.kind)}</i><b>${esc(s.court)}</b></span>
+      <span class="chiffres"><b>${s.pour}</b> · <b class="${s.contre ? '' : 'z'}">${s.contre}</b>`
+    + ` · <b class="${s.abst ? '' : 'z'}">${s.abst}</b></span>
+      <span class="jauge" aria-hidden="true"><span class="p" style="width:${pc(s.pour)}%"></span>`
+    + `<span class="c" style="width:${pc(s.contre)}%"></span>`
+    + `<span class="a" style="width:${pc(s.abst)}%"></span></span>
+    </button>`;
+}
+
+function carteHTML(s, i) {
+  const big = s.kind === 'Loi' || s.kind === 'Décret';
+  return `<button class="card ${big ? 'is-law' : ''}" aria-pressed="${i === cur}" data-i="${i}" type="button">
       <span class="tag"><span class="pip"></span>Scrutin ${s.id} · ${KL[s.kind] || s.kind}</span>
       <h3>${esc(s.court)}</h3>
       ${origineHTML(s)}
@@ -1402,13 +1503,90 @@ function cards() {
         <span>Pour<b>${s.pour}</b></span>
         <span>Contre<b class="${s.contre ? '' : 'z'}">${s.contre}</b></span>
         <span>Abst.<b class="${s.abst ? '' : 'z'}">${s.abst}</b></span>
-      </span></button>`).join('');
-  el('cards').querySelectorAll('.card').forEach(b =>
+      </span></button>`;
+}
+
+function cards() {
+  const liste = sc.scrutins.length > SEUIL_LISTE;
+  el('filtres').hidden = !liste;
+  if (liste) renderFiltres();
+  peupler();
+}
+
+function peupler() {
+  const liste = sc.scrutins.length > SEUIL_LISTE;
+  const box = el('cards');
+  box.classList.toggle('cards', !liste);
+  box.classList.toggle('rows', liste);
+  const gardes = liste ? filtrer() : sc.scrutins;
+  // l'index reste celui du scrutin dans la séance : filtrer ne le renumérote pas
+  const rendu = s => (liste ? ligneHTML : carteHTML)(s, sc.scrutins.indexOf(s));
+  box.innerHTML = gardes.length ? gardes.map(rendu).join('')
+    : `<p class="fvide">Aucun scrutin ne correspond à ces filtres.</p>`;
+  box.querySelectorAll('.card, .row').forEach(b =>
     b.addEventListener('click', () => {
       // choisir un scrutin, c'est vouloir en voir le résultat : on y mène directement
       nav(path(inst.id, sc.id, sc.scrutins[+b.dataset.i].id), true);
       allerA('sec-hemicycle');
     }));
+  if (liste) {
+    // la liste défile dans sa propre fenêtre : on y amène le scrutin affiché
+    const actif = box.querySelector('.row[aria-pressed="true"]');
+    if (actif) box.scrollTop = Math.max(0, actif.offsetTop - box.clientHeight / 2);
+    const n = gardes.length, t = sc.scrutins.length;
+    el('fcount').textContent = n === t ? `${t} scrutins`
+      : `${n} scrutin${n > 1 ? 's' : ''} sur ${t}`;
+  }
+}
+
+function renderFiltres() {
+  const kinds = [...new Set(sc.scrutins.map(s => s.kind))]
+    .map(k => [k, sc.scrutins.filter(s => s.kind === k).length])
+    .sort((a, b) => b[1] - a[1]);
+  const serres = sc.scrutins.filter(estSerre).length;
+  const chip = (cle, val, txt, n) =>
+    `<button class="chip" type="button" data-f="${cle}" data-v="${esc(String(val))}"`
+    + ` aria-pressed="false">${esc(txt)}${n != null ? ` <span class="c">${n}</span>` : ''}</button>`;
+  el('filtres').innerHTML =
+    kinds.map(([k, n]) => chip('kind', k, KL[k] || k, n)).join('')
+    + '<span class="sep"></span>'
+    + chip('issue', 'adopte', 'Adoptés', sc.scrutins.filter(estAdopte).length)
+    + chip('issue', 'rejete', 'Rejetés', sc.scrutins.filter(s => !estAdopte(s)).length)
+    + (serres ? '<span class="sep"></span>' + chip('serre', '1', 'Votes serrés', serres) : '')
+    + `<label class="search">
+        <svg width="15" height="15" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+          <circle cx="7" cy="7" r="4.6" stroke="currentColor" stroke-width="1.6" opacity=".55"/>
+          <path d="M10.6 10.6L14 14" stroke="currentColor" stroke-width="1.6"
+            stroke-linecap="round" opacity=".55"/></svg>
+        <input id="fq" type="search" placeholder="Chercher un scrutin…"
+          aria-label="Chercher un scrutin dans cette séance"></label>`
+    + `<button class="fclear" id="fclear" type="button" hidden>Tout afficher</button>`
+    + `<span class="fcount" id="fcount"></span>`;
+  el('filtres').querySelectorAll('.chip').forEach(b =>
+    b.addEventListener('click', () => basculerFiltre(b.dataset.f, b.dataset.v)));
+  el('fq').addEventListener('input', e => { filtres.q = e.target.value; majFiltres(); });
+  el('fclear').addEventListener('click', () => {
+    filtres = {kind: null, issue: null, serre: false, q: ''};
+    el('fq').value = '';
+    majFiltres();
+  });
+}
+
+function basculerFiltre(cle, val) {
+  if (cle === 'serre') filtres.serre = !filtres.serre;
+  else filtres[cle] = filtres[cle] === val ? null : val;
+  majFiltres();
+}
+
+function majFiltres() {
+  el('filtres').querySelectorAll('.chip').forEach(b => {
+    const actif = b.dataset.f === 'serre' ? filtres.serre
+      : filtres[b.dataset.f] === b.dataset.v;
+    b.setAttribute('aria-pressed', String(actif));
+  });
+  const vierge = !filtres.kind && !filtres.issue && !filtres.serre && !filtres.q;
+  el('fclear').hidden = vierge;
+  peupler();
 }
 
 function keys() {
@@ -1742,7 +1920,7 @@ function renderScrutin() {
   el('c-big').textContent = s.pour;
   el('c-cap').textContent = 'pour';
   el('c-sub').textContent = `sur ${votants} votants`;
-  el('cards').querySelectorAll('.card').forEach(b =>
+  el('cards').querySelectorAll('.card, .row').forEach(b =>
     b.setAttribute('aria-pressed', String(+b.dataset.i === cur)));
   hiKind = null; lockKind = null; hoverG = null;
   applyKind();   // remet barre, hémicycle et emblèmes à l'état neutre
@@ -2086,7 +2264,9 @@ function showDetail(i, s, scrutinId) {
   const first = sc !== s;
   sc = s; cur = idx; solo = null;
   montrer('detail');
-  if (first) { el('q').value = ''; renderHeader(); cards(); keys(); hemicycle(); legend(); hemiLabels(); }
+  if (first) { el('q').value = '';
+    filtres = {kind: null, issue: null, serre: false, q: ''};
+    renderHeader(); cards(); keys(); hemicycle(); legend(); hemiLabels(); }
   crumbs(el('crumbs'), [
     {label: 'Accueil', href: path()},
     {label: i.nom, abbr: SIGLE[i.id], href: path(i.id)},
