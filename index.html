@@ -383,10 +383,15 @@ body[data-theme="dark"] .plogo.sigle{background:#1d2a23;border-color:var(--line2
 /* ── ce que le vote change, en une phrase ─────────────
    Posée au-dessus de la carte du scrutin : on doit pouvoir repartir avec le
    résultat concret sans avoir lu ni l'intitulé ni les chiffres. */
-.apres{font-size:clamp(17px,2.1vw,21px);line-height:1.38;letter-spacing:-.011em;
-  font-weight:600;margin:0 0 clamp(14px,2vw,20px);padding:0 0 0 15px;
-  border-left:3px solid var(--accent);text-wrap:balance}
+.apres{position:relative;font-size:clamp(18px,2.3vw,23px);line-height:1.35;
+  letter-spacing:-.013em;font-weight:700;margin:0 0 clamp(16px,2.2vw,22px);
+  padding:0 0 clamp(15px,2vw,19px) 15px;border-left:3px solid var(--accent);
+  text-wrap:balance}
 .apres em{font-style:normal;color:var(--accent)}
+/* un filet pleine largeur sépare la conséquence du détail du texte ; il part du
+   bord de la section, au-delà du retrait créé par le filet vertical */
+.apres::after{content:"";position:absolute;left:-15px;right:0;bottom:0;height:1px;
+  background:var(--line)}
 
 /* ── hémicycle ───────────────────────────────────────── */
 .stage{background:var(--panel);border:1px solid var(--line);border-radius:3px;
@@ -394,7 +399,8 @@ body[data-theme="dark"] .plogo.sigle{background:#1d2a23;border-color:var(--line2
 .stage-head{display:flex;flex-wrap:wrap;gap:16px 32px;align-items:flex-start;
   justify-content:space-between;border-bottom:1px solid var(--line);padding-bottom:20px}
 .stage-head .who{display:flex;flex-direction:column;gap:7px}
-.stage-head h3{font-size:clamp(18px,2.3vw,23px)}
+.stage-head h3{font-size:clamp(15.5px,1.75vw,18px);font-weight:500;
+  color:var(--ink-dim);letter-spacing:0;line-height:1.4}
 .stage-head .obj{color:var(--ink-dim);font-size:15px;line-height:1.6}
 .stage-head .doc{font-family:var(--sans);font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted)}
 .outcome{font-family:var(--sans);font-size:12px;font-weight:600;letter-spacing:.03em;
