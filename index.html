@@ -789,8 +789,14 @@ body.avec-avis header{padding-top:0}
 .burger[aria-expanded="true"] span:nth-child(2){opacity:0}
 .burger[aria-expanded="true"] span:nth-child(3){transform:translateY(-5.5px) rotate(-45deg)}
 
-@media (max-width:860px){
-  .topnav{position:relative}
+.mode-txt{display:none}
+
+/* Le seuil est dicté par la mesure, pas par un palier d'appareil : la barre a
+   besoin de 934 pixels pour sa marque, ses six onglets et le sélecteur de
+   thème, soit une fenêtre de 1100. On replie dès 1120 pour n'avoir jamais à
+   passer sur deux lignes. */
+@media (max-width:1120px){
+  .topnav{position:relative;flex-wrap:nowrap}
   .burger{display:inline-flex}
   #onglets{position:absolute;top:calc(100% + 1px);left:0;right:0;z-index:40;
     display:none;flex-direction:column;gap:0;overflow:visible;padding:6px;
@@ -799,6 +805,17 @@ body.avec-avis header{padding-top:0}
   #onglets.ouvert{display:flex}
   #onglets a{padding:12px 14px;border-radius:3px;border-bottom:0;font-size:15px}
   #onglets a[aria-current="page"]{background:var(--panel2)}
+  /* le sélecteur de thème descend dans le menu : il n'a rien d'une entrée de
+     navigation, d'où le filet qui l'en sépare */
+  #onglets .mode{width:auto;height:auto;border:0;border-radius:3px;
+    background:none;justify-content:flex-start;gap:11px;
+    padding:12px 14px;margin-top:6px;position:relative}
+  #onglets .mode::before{content:"";position:absolute;top:-3px;left:8px;right:8px;
+    height:1px;background:var(--line)}
+  #onglets .mode:hover{background:var(--panel2)}
+  #onglets .mode .mode-txt{display:inline;font-family:var(--sans);font-size:15px;
+    font-weight:600;color:var(--ink-dim)}
+  #onglets .mode:hover .mode-txt{color:var(--accent)}
 }
 </style>
 
@@ -810,7 +827,8 @@ body.avec-avis header{padding-top:0}
   </a>
   <nav id="onglets" aria-label="Navigation principale"></nav>
   <button class="mode" id="mode" type="button" aria-pressed="false"
-          title="Basculer en mode sombre"><span id="mode-icone"></span></button>
+          title="Basculer en mode sombre"><span id="mode-icone"></span><span
+          class="mode-txt" id="mode-txt"></span></button>
   <button class="burger" id="burger" type="button" aria-expanded="false"
           aria-controls="onglets" aria-label="Ouvrir le menu de navigation">
     <span aria-hidden="true"></span><span aria-hidden="true"></span><span aria-hidden="true"></span>
@@ -1287,6 +1305,7 @@ function appliquerMode() {
   // l'icône annonce la destination, pas l'état courant
   el('mode-icone').innerHTML = sombre ? SOLEIL : LUNE;
   b.title = sombre ? 'Revenir au mode clair' : 'Basculer en mode sombre';
+  el('mode-txt').textContent = sombre ? 'Mode clair' : 'Mode sombre';
   b.setAttribute('aria-label', b.title);
   b.setAttribute('aria-pressed', String(sombre));
   try { localStorage.setItem('hemicycles-mode', mode); } catch (e) { /* stockage refusé */ }
@@ -2163,10 +2182,27 @@ function menu(ouvrir) {
                                       : 'Ouvrir le menu de navigation');
 }
 
+// le sélecteur de thème appartient à la barre en grand écran et au menu quand
+// elle se replie : on le déplace plutôt que de le dupliquer, pour n'avoir qu'un
+// seul bouton à tenir à jour
+const REPLIE = matchMedia('(max-width:1120px)');
+function placerMode() {
+  const b = el('mode');
+  if (REPLIE.matches) el('onglets').append(b);
+  else el('topnav').insertBefore(b, el('burger'));
+}
+
 function cablerMenu() {
+  placerMode();
+  REPLIE.addEventListener('change', () => { placerMode(); menu(false); });
   el('burger').addEventListener('click', e => { e.stopPropagation(); menu(); });
   // naviguer referme : sinon le panneau masque la page qu'on vient d'ouvrir
-  el('onglets').addEventListener('click', e => { if (e.target.closest('a')) menu(false); });
+  el('onglets').addEventListener('click', e => {
+    // on referme en naviguant, mais pas en changeant de thème : le lecteur veut
+    // voir le résultat de sa bascule
+    if (e.target.closest('a')) menu(false);
+    else if (e.target.closest('.mode')) e.stopPropagation();
+  });
   addEventListener('keydown', e => {
     if (e.key === 'Escape' && el('onglets').classList.contains('ouvert')) {
       menu(false);
@@ -2176,10 +2212,6 @@ function cablerMenu() {
   addEventListener('click', e => {
     if (el('onglets').classList.contains('ouvert')
         && !e.target.closest('#onglets') && !e.target.closest('#burger')) menu(false);
-  });
-  // repasser en grand écran laisse l'attribut ouvert sur un menu redevenu barre
-  matchMedia('(min-width:861px)').addEventListener('change', e => {
-    if (e.matches) menu(false);
   });
 }
 
