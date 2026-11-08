@@ -1478,7 +1478,10 @@ function renderPicker() {
 function renderHeader() {
   el('f-detail').innerHTML = flagHTML(inst);
   el('d-criv').textContent = `${inst.nomLong} · ${sc.criv} · ${sc.moment}`;
-  el('d-title').innerHTML = `${sc.date} : <em>${esc(sc.titre.toLowerCase())}</em>`;
+  // le titre s'enchaîne à la date : seule son initiale s'abaisse, sans quoi les
+  // sigles et les noms propres y passeraient aussi (« le ceta », « l'arizona »)
+  const titre = sc.titre.charAt(0).toLowerCase() + sc.titre.slice(1);
+  el('d-title').innerHTML = `${sc.date} : <em>${esc(titre)}</em>`;
   el('d-lede').innerHTML = lexiquer(sc.resume);
   el('d-facts').innerHTML = `<span><b>${inst.sieges}</b> sièges</span>` +
     sc.chiffres.map(c => `<span><b>${c[0]}</b> ${c[1]}</span>`).join('');
