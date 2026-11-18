@@ -1481,7 +1481,9 @@ function renderHeader() {
   // le titre s'enchaîne à la date : seule son initiale s'abaisse, sans quoi les
   // sigles et les noms propres y passeraient aussi (« le ceta », « l'arizona »)
   const titre = sc.titre.charAt(0).toLowerCase() + sc.titre.slice(1);
-  el('d-title').innerHTML = `${sc.date} : <em>${esc(titre)}</em>`;
+  // espace insécable avant le deux-points : sans elle, il se retrouve rejeté
+  // en tête de ligne quand le titre passe sur deux lignes
+  el('d-title').innerHTML = `${sc.date} : <em>${esc(titre)}</em>`;
   el('d-lede').innerHTML = lexiquer(sc.resume);
   el('d-facts').innerHTML = `<span><b>${inst.sieges}</b> sièges</span>` +
     sc.chiffres.map(c => `<span><b>${c[0]}</b> ${c[1]}</span>`).join('');
